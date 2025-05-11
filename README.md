@@ -67,4 +67,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 # KompactAndroid
 An open-source Android application for creating and managing various types of user-defined lists.
- b25cc62099e714837061c97da5022d81b6167db5
