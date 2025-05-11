@@ -1,3 +1,4 @@
+HEAD
 # Kompact
 
 <div align="center">
@@ -64,3 +65,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request 
+
+# KompactAndroid
+An open-source Android application for creating and managing various types of user-defined lists.
+ b25cc62099e714837061c97da5022d81b6167db5
