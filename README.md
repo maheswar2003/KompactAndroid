@@ -1,4 +1,3 @@
-HEAD
 # Kompact
 
 <div align="center">
@@ -9,9 +8,9 @@ Kompact is a minimalist Android app for organizing lists. Built with modern Andr
 
 ## Download
 
-[![Download APK](https://img.shields.io/badge/Download-APK-green.svg)](https://github.com/YOUR-USERNAME/kompact/releases/download/v1.0.0/Kompact-v1.0.0.apk)
+[<img src="https://img.shields.io/badge/Download-APK-green.svg" alt="Download APK" width="150"/>](app/release/Kompact-v1.0.0.apk)
 
-You can download the latest APK from the [Releases](https://github.com/YOUR-USERNAME/kompact/releases) page.
+The APK file is included directly in this repository for easy access.
 
 ## Features
 
@@ -38,7 +37,7 @@ You can download the latest APK from the [Releases](https://github.com/YOUR-USER
 ## Installation
 
 ### Option 1: Direct Download
-1. [Download the APK](https://github.com/YOUR-USERNAME/kompact/releases/download/v1.0.0/Kompact-v1.0.0.apk)
+1. Download the [APK file](app/release/Kompact-v1.0.0.apk) from this repository
 2. Enable "Install from Unknown Sources" in your device settings if prompted
 3. Open the downloaded APK file to install
 
@@ -64,7 +63,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request 
+5. Open a Pull Request
 
 # KompactAndroid
 An open-source Android application for creating and managing various types of user-defined lists.
