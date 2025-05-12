@@ -7,14 +7,20 @@ import android.view.View
 import android.widget.EditText
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.kompact.KompactApplication
 import com.kompact.R
 import com.kompact.data.UserList
 import com.kompact.databinding.ActivityMainBinding
 import com.kompact.ui.detail.ListItemsActivity
+import com.kompact.ui.settings.SettingsActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,13 +29,27 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: UserListAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Install splash screen
+        installSplashScreen()
+        
         super.onCreate(savedInstanceState)
+        
+        // Apply the saved theme
+        applyTheme()
+        
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setupRecyclerView()
         observeViewModel()
         setupFab()
+        setupSettingsButton()
+    }
+    
+    private fun applyTheme() {
+        val sharedPrefs = getSharedPreferences("app_settings", MODE_PRIVATE)
+        val themeMode = sharedPrefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        AppCompatDelegate.setDefaultNightMode(themeMode)
     }
 
     private fun setupRecyclerView() {
@@ -42,11 +62,25 @@ class MainActivity : AppCompatActivity() {
             }
         )
         binding.recyclerViewUserLists.adapter = adapter
-        binding.recyclerViewUserLists.layoutManager = LinearLayoutManager(this)
+        
+        val gridLayoutManager = GridLayoutManager(this, 2)
+        binding.recyclerViewUserLists.layoutManager = gridLayoutManager
+        
+        // Hide FAB on scroll
+        binding.recyclerViewUserLists.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (dy > 0 && binding.fabAddList.isExtended) {
+                    binding.fabAddList.shrink()
+                } else if (dy < 0 && !binding.fabAddList.isExtended) {
+                    binding.fabAddList.extend()
+                }
+            }
+        })
     }
 
     private fun observeViewModel() {
-        userListViewModel.allUserLists.observe(this) { lists ->
+        userListViewModel.allUserListsWithCount.observe(this) { lists ->
             adapter.submitList(lists)
             if (lists.isNullOrEmpty()) {
                 binding.textViewEmptyState.visibility = View.VISIBLE
@@ -63,9 +97,16 @@ class MainActivity : AppCompatActivity() {
             showCategorySelectionDialog()
         }
     }
+    
+    private fun setupSettingsButton() {
+        binding.settingsButton.setOnClickListener {
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+        }
+    }
 
     private fun showCategorySelectionDialog() {
-        val categories = arrayOf("Generic", "Movies") // MVP categories
+        val categories = arrayOf("Movies", "Books", "Apps", "Games", "Songs", "TV Shows", "Podcasts", "Artists", "Animes", "Video Games")
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.select_list_category)
             .setItems(categories) { dialog, which ->
@@ -129,4 +170,4 @@ class MainActivity : AppCompatActivity() {
         }
         startActivity(intent)
     }
-} 
+}

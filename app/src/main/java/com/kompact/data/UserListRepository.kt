@@ -17,11 +17,25 @@ class UserListRepository(private val userListDao: UserListDao) {
             emit(lists)
         }
     }
+    
+    val allUserListsWithCount: LiveData<List<UserListWithCount>> = liveData {
+        userListDao.getUserListsWithItemCount().collect { lists ->
+            emit(lists)
+        }
+    }
 
     // Example: Insert a UserList.
     // Should be called from a coroutine or other background thread.
     suspend fun insert(userList: UserList) {
         userListDao.insert(userList)
+    }
+    
+    suspend fun delete(userList: UserList) {
+        userListDao.delete(userList)
+    }
+    
+    suspend fun getItemCountForList(listId: Long): Int {
+        return userListDao.getItemCountForList(listId)
     }
 
     // TODO: Add other necessary methods for UserList operations:

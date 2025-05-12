@@ -24,4 +24,10 @@ interface UserListDao {
 
     @Query("SELECT * FROM UserLists WHERE list_id = :listId")
     fun getUserListById(listId: Long): Flow<UserList?>
+    
+    @Query("SELECT COUNT(*) FROM ListItems WHERE parent_list_id = :listId")
+    suspend fun getItemCountForList(listId: Long): Int
+    
+    @Query("SELECT ul.*, (SELECT COUNT(*) FROM ListItems li WHERE li.parent_list_id = ul.list_id) as item_count FROM UserLists ul ORDER BY ul.creation_date DESC")
+    fun getUserListsWithItemCount(): Flow<List<UserListWithCount>>
 } 

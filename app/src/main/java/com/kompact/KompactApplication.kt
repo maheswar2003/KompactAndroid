@@ -1,6 +1,7 @@
 package com.kompact
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
 import com.kompact.data.AppDatabase // Assuming AppDatabase is in com.kompact.data
 import com.kompact.data.UserListRepository // Assuming UserListRepository is in com.kompact.data
 
@@ -11,5 +12,14 @@ class KompactApplication : Application() {
         UserListRepository(
             AppDatabase.getDatabase(this).userListDao() // Assuming these methods exist
         )
+    }
+    
+    override fun onCreate() {
+        super.onCreate()
+        
+        // Initialize theme based on saved preference
+        val sharedPrefs = getSharedPreferences("app_settings", MODE_PRIVATE)
+        val themeMode = sharedPrefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        AppCompatDelegate.setDefaultNightMode(themeMode)
     }
 } 
