@@ -54,7 +54,7 @@ class ListItemsActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbarListItems)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "$listName ($listCategory)"
+        supportActionBar?.title = listName
 
         setupRecyclerView()
         observeViewModel()

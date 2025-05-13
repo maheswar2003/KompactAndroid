@@ -143,15 +143,28 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private fun sendFeedbackEmail() {
-        val intent = Intent(Intent.ACTION_SENDTO).apply {
-            data = Uri.parse("mailto:maheswar2003@yahoo.com")
+        // First try with ACTION_SEND which works with most email apps
+        val emailIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "message/rfc822"
+            putExtra(Intent.EXTRA_EMAIL, arrayOf("maheswar2003@yahoo.com"))
             putExtra(Intent.EXTRA_SUBJECT, "Feedback for Kompact App")
         }
         
-        if (intent.resolveActivity(packageManager) != null) {
-            startActivity(intent)
+        // Check if there's an app that can handle this intent
+        if (emailIntent.resolveActivity(packageManager) != null) {
+            startActivity(Intent.createChooser(emailIntent, "Send feedback via:"))
         } else {
-            Toast.makeText(this, R.string.no_email_app, Toast.LENGTH_SHORT).show()
+            // Fallback to mailto: URI if no email apps are installed
+            val fallbackIntent = Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.parse("mailto:maheswar2003@yahoo.com")
+                putExtra(Intent.EXTRA_SUBJECT, "Feedback for Kompact App")
+            }
+            
+            if (fallbackIntent.resolveActivity(packageManager) != null) {
+                startActivity(fallbackIntent)
+            } else {
+                Toast.makeText(this, R.string.no_email_app, Toast.LENGTH_SHORT).show()
+            }
         }
     }
     
@@ -208,7 +221,7 @@ class SettingsActivity : AppCompatActivity() {
                     // Create final JSON object
                     JSONObject().apply {
                         put("exportDate", System.currentTimeMillis())
-                        put("appVersion", "1.0.1")
+                        put("appVersion", "1.0.0")
                         put("lists", listsJson)
                     }.toString(2) // Pretty print with 2-space indentation
                 }
