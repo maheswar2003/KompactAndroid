@@ -1,67 +1,132 @@
 package com.kompact.ui.main
 
 import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.kompact.R
 import com.kompact.data.UserList
 import com.kompact.data.UserListWithCount
-import com.kompact.databinding.ItemUserListBinding
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 class UserListAdapter(
-    private val onListClicked: (UserList) -> Unit,
-    private val onDeleteClicked: (UserList) -> Unit
-) : ListAdapter<UserListWithCount, UserListAdapter.UserListViewHolder>(UserListWithCountDiffCallback()) {
+    private val listener: UserListAdapterListener
+) : ListAdapter<UserListWithCount, UserListAdapter.UserListViewHolder>(UserListDiffCallback()) {
+
+    interface UserListAdapterListener {
+        fun onItemClicked(userList: UserList)
+        fun onItemLongClicked(userList: UserList): Boolean
+    }
+
+    private var isDragEnabled = false
+    
+    // Drag handle interface for external controllers
+    interface OnStartDragListener {
+        fun onStartDrag(viewHolder: RecyclerView.ViewHolder)
+    }
+    
+    private var startDragListener: OnStartDragListener? = null
+    
+    fun setOnStartDragListener(listener: OnStartDragListener?) {
+        startDragListener = listener
+    }
+    
+    fun setDragEnabled(enabled: Boolean) {
+        if (isDragEnabled != enabled) {  // Only update if the state actually changed
+            isDragEnabled = enabled
+            notifyDataSetChanged()
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserListViewHolder {
-        val binding =
-            ItemUserListBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return UserListViewHolder(binding)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_user_list, parent, false)
+        return UserListViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: UserListViewHolder, position: Int) {
         val userListWithCount = getItem(position)
         holder.bind(userListWithCount)
-        holder.itemView.setOnClickListener { onListClicked(userListWithCount.toUserList()) }
-        // Long press for delete functionality to replace the delete button
-        holder.itemView.setOnLongClickListener {
-            onDeleteClicked(userListWithCount.toUserList())
-            true
-        }
     }
 
-    class UserListViewHolder(val binding: ItemUserListBinding) :
-        RecyclerView.ViewHolder(binding.root) {
+    inner class UserListViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val cardView: MaterialCardView = itemView.findViewById(R.id.cardView)
+        private val textViewListName: TextView = itemView.findViewById(R.id.textViewListName)
+        private val textViewItemCount: TextView = itemView.findViewById(R.id.textViewItemCount)
+        private val imageViewCategoryIcon: ImageView = itemView.findViewById(R.id.imageViewCategoryIcon)
+        private val buttonDelete: ImageButton = itemView.findViewById(R.id.buttonDelete)
+        private val dragHandle: ImageView = itemView.findViewById(R.id.imageViewDragHandle)
+
         fun bind(userListWithCount: UserListWithCount) {
-            binding.textViewListName.text = userListWithCount.list_name
+            val userList = userListWithCount.toUserList()
+            textViewListName.text = userListWithCount.list_name
+            textViewItemCount.text = userListWithCount.item_count.toString()
             
-            // Set count
-            binding.itemCountTextView.text = userListWithCount.item_count.toString()
-            
-            // Set appropriate icon based on category
+            // Set category icon based on list category type
             val iconResource = when (userListWithCount.list_category_type) {
-                "Movies" -> android.R.drawable.ic_media_play
+                "Movies" -> R.drawable.ic_movie
                 "Books" -> R.drawable.ic_book
-                "Apps" -> R.drawable.ic_apps
-                "Games" -> R.drawable.ic_games
-                "Songs" -> R.drawable.ic_music
-                "TV Shows" -> R.drawable.ic_tv
-                "Podcasts" -> R.drawable.ic_podcast
-                "Artists" -> R.drawable.ic_artist
-                "Animes" -> R.drawable.ic_anime
-                "Video Games" -> R.drawable.ic_videogame
-                else -> android.R.drawable.ic_menu_agenda
+                "Music" -> R.drawable.ic_music
+                "Todo" -> R.drawable.ic_todo
+                else -> R.drawable.ic_list
             }
-            binding.categoryIcon.setImageResource(iconResource)
+            imageViewCategoryIcon.setImageResource(iconResource)
+            
+            // Make drag handle more prominent when drag is enabled
+            if (isDragEnabled) {
+                dragHandle.visibility = View.VISIBLE
+                dragHandle.alpha = 1.0f
+                
+                // Add an elevation effect to the card to indicate it's draggable
+                cardView.elevation = 8f
+                
+                // Make the card appear slightly different when drag is enabled
+                cardView.strokeWidth = 2
+                cardView.strokeColor = cardView.resources.getColor(R.color.primary, null)
+            } else {
+                dragHandle.visibility = View.GONE
+                cardView.elevation = 2f
+                cardView.strokeWidth = 0
+            }
+            
+            // Hide checkbox and ensure card is never in checked state
+            cardView.isChecked = false
+            
+            // Set up click listeners
+            cardView.setOnClickListener {
+                listener.onItemClicked(userList)
+            }
+            
+            cardView.setOnLongClickListener {
+                listener.onItemLongClicked(userList)
+            }
+            
+            // Enhanced drag handle interaction
+            dragHandle.setOnTouchListener { view, event ->
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        if (isDragEnabled) {
+                            view.animate().scaleX(1.2f).scaleY(1.2f).setDuration(150).start()
+                            startDragListener?.onStartDrag(this)
+                        }
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        view.animate().scaleX(1.0f).scaleY(1.0f).setDuration(150).start()
+                    }
+                }
+                isDragEnabled // Only consume event if drag is enabled
+            }
         }
     }
 }
 
-class UserListWithCountDiffCallback : DiffUtil.ItemCallback<UserListWithCount>() {
+class UserListDiffCallback : DiffUtil.ItemCallback<UserListWithCount>() {
     override fun areItemsTheSame(oldItem: UserListWithCount, newItem: UserListWithCount): Boolean {
         return oldItem.list_id == newItem.list_id
     }

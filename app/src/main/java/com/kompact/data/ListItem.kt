@@ -21,7 +21,7 @@ data class ListItem(
     val parent_list_id: Long,
     val item_title: String,
     val item_notes: String? = null,
-    var item_status: String, // e.g., 'Pending', 'Completed', or category-specific
+    var item_status: Boolean, // Changed from String to Boolean
     val creation_date: Date,
     val custom_fields: String? = null // JSON/Text blob for category-specific data
 ) 

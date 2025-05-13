@@ -42,7 +42,7 @@ class ListItemViewModel(
                 parent_list_id = listId,
                 item_title = itemTitle,
                 item_notes = itemNotes,
-                item_status = "Pending", // Default status
+                item_status = false, // Default status is false (not completed)
                 creation_date = Date(),
                 custom_fields = customFieldsString
             )
@@ -72,9 +72,9 @@ class ListItemViewModel(
         repository.update(updatedItem)
     }
 
-    fun updateItemStatus(itemToUpdate: ListItem, newStatus: String) =
+    fun updateItemStatus(itemToUpdate: ListItem, newStatusIsChecked: Boolean) =
         viewModelScope.launch(Dispatchers.IO) {
-            val updatedItem = itemToUpdate.copy(item_status = newStatus)
+            val updatedItem = itemToUpdate.copy(item_status = newStatusIsChecked)
             repository.update(updatedItem)
         }
 

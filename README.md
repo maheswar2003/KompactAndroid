@@ -8,15 +8,18 @@ Kompact is a minimalist Android app for organizing lists. Built with modern Andr
 
 ## Download
 
-[<img src="https://img.shields.io/badge/Download-APK-green.svg" alt="Download APK" width="150"/>](app/release/Kompact-v1.0.0.apk)
+[<img src="https://img.shields.io/badge/Download-APK-green.svg" alt="Download APK" width="150"/>](app/release/Kompact-v1.0.1.apk)
 
 The APK file is included directly in this repository for easy access.
 
 ## Features
 
-- Create and manage multiple list types (Generic, Movies, etc.)
+- Create and manage multiple list types (General, Movies, Books, Music, Todo)
 - Add, edit, and delete items within lists
-- Simple and intuitive UI designed with Material Design 3
+- Custom sort lists in your preferred order
+- Dark and light theme support
+- Import/Export functionality for data backup
+- Smart import system that prevents duplicates
 
 ## Technical Details
 
@@ -37,7 +40,7 @@ The APK file is included directly in this repository for easy access.
 ## Installation
 
 ### Option 1: Direct Download
-1. Download the [APK file](app/release/Kompact-v1.0.0.apk) from this repository
+1. Download the [APK file](app/release/Kompact-v1.0.1.apk) from this repository
 2. Enable "Install from Unknown Sources" in your device settings if prompted
 3. Open the downloaded APK file to install
 

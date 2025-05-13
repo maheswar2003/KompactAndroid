@@ -13,6 +13,12 @@ interface UserListDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(userList: UserList): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAndGetId(userList: UserList): Long
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertListItem(listItem: ListItem): Long
+
     @Update
     suspend fun update(userList: UserList)
 
@@ -25,9 +31,21 @@ interface UserListDao {
     @Query("SELECT * FROM UserLists WHERE list_id = :listId")
     fun getUserListById(listId: Long): Flow<UserList?>
     
+    @Query("SELECT * FROM UserLists WHERE list_id = :listId")
+    fun getListById(listId: Long): Flow<UserList>
+    
     @Query("SELECT COUNT(*) FROM ListItems WHERE parent_list_id = :listId")
     suspend fun getItemCountForList(listId: Long): Int
     
     @Query("SELECT ul.*, (SELECT COUNT(*) FROM ListItems li WHERE li.parent_list_id = ul.list_id) as item_count FROM UserLists ul ORDER BY ul.creation_date DESC")
     fun getUserListsWithItemCount(): Flow<List<UserListWithCount>>
+    
+    @Query("SELECT * FROM ListItems WHERE parent_list_id = :listId ORDER BY creation_date DESC")
+    fun getListItemsForList(listId: Long): Flow<List<ListItem>>
+    
+    @Query("DELETE FROM UserLists")
+    suspend fun deleteAllLists()
+    
+    @Query("DELETE FROM ListItems WHERE parent_list_id = :listId")
+    suspend fun deleteAllItemsForList(listId: Long)
 } 

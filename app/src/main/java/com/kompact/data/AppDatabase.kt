@@ -20,7 +20,7 @@ class Converters {
     }
 }
 
-@Database(entities = [UserList::class, ListItem::class], version = 1, exportSchema = false)
+@Database(entities = [UserList::class, ListItem::class], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userListDao(): UserListDao
@@ -37,7 +37,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "kompact_database"
                 )
-                    .fallbackToDestructiveMigration(false) // For MVP, simpler migration strategy
+                    .fallbackToDestructiveMigration(true) // Enable destructive migration due to schema change
                     .build()
                 INSTANCE = instance
                 instance

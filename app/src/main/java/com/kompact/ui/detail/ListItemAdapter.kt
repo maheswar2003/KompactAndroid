@@ -1,11 +1,18 @@
 package com.kompact.ui.detail
 
+import android.graphics.Paint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
+import android.widget.ImageButton
+import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
+import com.kompact.R
 import com.kompact.data.ListItem
 import com.kompact.databinding.ItemGenericListBinding
 import org.json.JSONObject // Import for JSON handling
@@ -19,60 +26,107 @@ class ListItemAdapter(
 ) : ListAdapter<ListItem, ListItemAdapter.ListItemViewHolder>(ListItemDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ListItemViewHolder {
-        val binding =
-            ItemGenericListBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ListItemViewHolder(binding, listCategory) // Pass category to ViewHolder
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_list_item, parent, false)
+        return ListItemViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ListItemViewHolder, position: Int) {
         val item = getItem(position)
         holder.bind(item)
-        holder.itemView.setOnClickListener { onItemClicked(item) } // Click on whole item for edit, or use edit button
-        holder.binding.buttonEditItem.setOnClickListener { onEditClicked(item) }
-        holder.binding.buttonDeleteItem.setOnClickListener { onDeleteClicked(item) }
-        holder.binding.checkboxItemStatus.setOnCheckedChangeListener(null) // Avoid infinite loops/multiple calls
-        holder.binding.checkboxItemStatus.isChecked = item.item_status == "Completed"
-        holder.binding.checkboxItemStatus.setOnCheckedChangeListener { _, isChecked ->
-            onCheckboxChanged(item, isChecked)
-        }
     }
 
-    class ListItemViewHolder(
-        val binding: ItemGenericListBinding,
-        private val listCategory: String
-    ) : RecyclerView.ViewHolder(binding.root) {
+    inner class ListItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val cardView: MaterialCardView = itemView.findViewById(R.id.cardView)
+        private val titleTextView: TextView = itemView.findViewById(R.id.textViewItemTitle)
+        private val notesTextView: TextView = itemView.findViewById(R.id.textViewItemNotes)
+        private val checkbox: CheckBox = itemView.findViewById(R.id.checkboxItemStatus)
+        private val editButton: ImageButton = itemView.findViewById(R.id.buttonEdit)
+        private val deleteButton: ImageButton = itemView.findViewById(R.id.buttonDelete)
+        private val extraInfoView: TextView = itemView.findViewById(R.id.textViewExtraInfo)
+
         fun bind(item: ListItem) {
-            binding.textViewItemTitle.text = item.item_title
-            binding.textViewItemNotes.visibility =
-                if (item.item_notes.isNullOrEmpty()) View.GONE else View.VISIBLE
-            binding.textViewItemNotes.text = item.item_notes
+            // Set title and notes
+            titleTextView.text = item.item_title
+            
+            if (item.item_notes.isNullOrEmpty()) {
+                notesTextView.visibility = View.GONE
+            } else {
+                notesTextView.visibility = View.VISIBLE
+                notesTextView.text = item.item_notes
+            }
 
-            binding.checkboxItemStatus.isChecked = item.item_status == "Completed"
+            // Set checkbox state
+            val isCompleted = item.item_status
+            checkbox.isChecked = isCompleted
+            
+            // Apply visual styling for completed items
+            if (isCompleted) {
+                // Apply strikethrough for completed items
+                titleTextView.paintFlags = titleTextView.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+                notesTextView.paintFlags = notesTextView.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+                
+                // Reduce opacity for completed items
+                titleTextView.alpha = 0.6f
+                notesTextView.alpha = 0.6f
+                extraInfoView.alpha = 0.6f
+                cardView.alpha = 0.8f
+            } else {
+                // Remove strikethrough for active items
+                titleTextView.paintFlags = titleTextView.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+                notesTextView.paintFlags = notesTextView.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+                
+                // Restore full opacity for active items
+                titleTextView.alpha = 1.0f
+                notesTextView.alpha = 1.0f
+                extraInfoView.alpha = 1.0f
+                cardView.alpha = 1.0f
+            }
 
+            // Handle Movies category extra fields
             if (listCategory == "Movies" && !item.custom_fields.isNullOrEmpty()) {
                 try {
                     val json = JSONObject(item.custom_fields)
-                    val director = json.optString("director", "")
-                    val year = json.optString("release_year", "")
-                    var subInfoText = ""
-                    if (director.isNotEmpty()) subInfoText += "Directed by $director"
-                    if (year.isNotEmpty()) {
-                        if (subInfoText.isNotEmpty()) subInfoText += " • "
-                        subInfoText += year
+                    val director = json.optString("director")
+                    val releaseYear = json.optString("release_year")
+                    
+                    val extraInfo = StringBuilder()
+                    
+                    if (director.isNotEmpty()) {
+                        extraInfo.append(itemView.context.getString(R.string.directed_by, director))
                     }
-
-                    if (subInfoText.isNotEmpty()) {
-                        binding.textViewSubInfo.text = subInfoText
-                        binding.textViewSubInfo.visibility = View.VISIBLE
+                    
+                    if (releaseYear.isNotEmpty()) {
+                        if (extraInfo.isNotEmpty()) {
+                            extraInfo.append(itemView.context.getString(R.string.year_dot_prefix, releaseYear))
+                        } else {
+                            extraInfo.append(releaseYear)
+                        }
+                    }
+                    
+                    if (extraInfo.isNotEmpty()) {
+                        extraInfoView.text = extraInfo.toString()
+                        extraInfoView.visibility = View.VISIBLE
                     } else {
-                        binding.textViewSubInfo.visibility = View.GONE
+                        extraInfoView.visibility = View.GONE
                     }
                 } catch (e: Exception) {
-                    binding.textViewSubInfo.visibility = View.GONE
+                    extraInfoView.visibility = View.GONE
                 }
             } else {
-                binding.textViewSubInfo.visibility = View.GONE
+                extraInfoView.visibility = View.GONE
             }
+
+            // Set click listeners
+            cardView.setOnClickListener { onItemClicked(item) }
+            
+            checkbox.setOnClickListener { 
+                val newState = checkbox.isChecked
+                onCheckboxChanged(item, newState)
+            }
+            
+            editButton.setOnClickListener { onEditClicked(item) }
+            deleteButton.setOnClickListener { onDeleteClicked(item) }
         }
     }
 }

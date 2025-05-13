@@ -5,13 +5,20 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.kompact.R
 import com.kompact.data.ListItem
 import com.kompact.databinding.ActivityListItemsBinding
 import com.kompact.databinding.DialogAddEditItemBinding
+import com.kompact.ui.common.WindowInsetHelper
 import org.json.JSONObject
+import android.widget.TextView
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import com.google.android.material.button.MaterialButton
+import android.widget.LinearLayout
 
 class ListItemsActivity : AppCompatActivity() {
 
@@ -35,8 +42,15 @@ class ListItemsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Set up edge-to-edge display
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        
         binding = ActivityListItemsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Apply window insets - REMOVED
+        // WindowInsetHelper.applySystemBarInsets(binding.root)
 
         setSupportActionBar(binding.toolbarListItems)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -51,8 +65,7 @@ class ListItemsActivity : AppCompatActivity() {
         adapter = ListItemAdapter(
             onItemClicked = { listItem -> showAddEditItemDialog(listItem) },
             onCheckboxChanged = { listItem, isChecked ->
-                val newStatus = if (isChecked) "Completed" else "Pending"
-                listItemViewModel.updateItemStatus(listItem, newStatus)
+                listItemViewModel.updateItemStatus(listItem, isChecked)
             },
             onDeleteClicked = { listItem -> showDeleteItemConfirmationDialog(listItem) },
             onEditClicked = { listItem -> showAddEditItemDialog(listItem) },
@@ -79,103 +92,100 @@ class ListItemsActivity : AppCompatActivity() {
     }
 
     private fun showAddEditItemDialog(itemToEdit: ListItem?) {
-        val dialogBinding = DialogAddEditItemBinding.inflate(LayoutInflater.from(this))
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.custom_dialog_add_item, null)
+        
+        // Find views
+        val dialogTitle = dialogView.findViewById<TextView>(R.id.dialogTitle)
+        val editTextItemTitle = dialogView.findViewById<TextInputEditText>(R.id.editTextItemTitle)
+        val editTextItemNotes = dialogView.findViewById<TextInputEditText>(R.id.editTextItemNotes)
+        val buttonCancel = dialogView.findViewById<MaterialButton>(R.id.buttonCancel)
+        val buttonAdd = dialogView.findViewById<MaterialButton>(R.id.buttonAdd)
+        val movieFieldsContainer = dialogView.findViewById<LinearLayout>(R.id.movieFieldsContainer)
+        val editTextDirector = dialogView.findViewById<TextInputEditText>(R.id.editTextDirector)
+        val editTextReleaseYear = dialogView.findViewById<TextInputEditText>(R.id.editTextReleaseYear)
+        val tilReleaseYear = dialogView.findViewById<TextInputLayout>(R.id.tilReleaseYear)
+        
         val isMovieList = listCategory == "Movies"
+        movieFieldsContainer.visibility = if (isMovieList) View.VISIBLE else View.GONE
 
-        dialogBinding.movieFieldsContainer.visibility = if (isMovieList) View.VISIBLE else View.GONE
+        // Set dialog title and button text
+        dialogTitle.text = if (itemToEdit == null) getString(R.string.add_item) else getString(R.string.edit_item)
+        buttonAdd.text = if (itemToEdit == null) getString(R.string.add) else getString(R.string.save)
 
-        val dialogTitle =
-            if (itemToEdit == null) getString(R.string.add_item) else getString(R.string.edit_item)
-        val positiveButtonText =
-            if (itemToEdit == null) getString(R.string.add) else getString(R.string.save)
-
-        // Set hints from resources
-        dialogBinding.editTextItemTitle.hint = getString(R.string.title_required)
-        dialogBinding.editTextItemNotes.hint = getString(R.string.notes_optional)
-        if (isMovieList) {
-            dialogBinding.editTextDirector.hint = getString(R.string.director_optional)
-            dialogBinding.editTextReleaseYear.hint = getString(R.string.release_year)
-        }
-
+        // Set pre-filled values if editing
         itemToEdit?.let {
-            dialogBinding.editTextItemTitle.setText(it.item_title)
-            dialogBinding.editTextItemNotes.setText(it.item_notes)
+            editTextItemTitle.setText(it.item_title)
+            editTextItemNotes.setText(it.item_notes)
             if (isMovieList && !it.custom_fields.isNullOrEmpty()) {
                 try {
                     val json = JSONObject(it.custom_fields)
-                    dialogBinding.editTextDirector.setText(json.optString("director"))
-                    dialogBinding.editTextReleaseYear.setText(json.optString("release_year"))
+                    editTextDirector.setText(json.optString("director"))
+                    editTextReleaseYear.setText(json.optString("release_year"))
                 } catch (e: Exception) {
                     // Log error or handle - e.g. custom_fields might be malformed
                 }
             }
         }
+        
+        // Create the dialog
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .create()
+        
+        // Set button click listeners
+        buttonCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+        
+        buttonAdd.setOnClickListener {
+            val title = editTextItemTitle.text.toString().trim()
+            val notes = editTextItemNotes.text.toString().trim()
+                .takeIf { it.isNotEmpty() }
+            var director: String? = null
+            var releaseYear: Int? = null
+            var isValid = true
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle(dialogTitle)
-            .setView(dialogBinding.root)
-            .setPositiveButton(
-                positiveButtonText,
-                null
-            ) // Set to null initially to prevent auto-dismiss
-            .setNegativeButton(R.string.cancel) { dialog, _ ->
+            if (title.isEmpty()) {
+                editTextItemTitle.error = getString(R.string.title_empty)
+                isValid = false
+            } else {
+                editTextItemTitle.error = null
+            }
+
+            if (isMovieList) {
+                director = editTextDirector.text.toString().trim()
+                    .takeIf { it.isNotEmpty() }
+                val releaseYearText = editTextReleaseYear.text.toString().trim()
+                if (releaseYearText.isNotEmpty()) {
+                    if (!releaseYearText.matches("\\d{4}".toRegex())) {
+                        tilReleaseYear.error = getString(R.string.invalid_year)
+                        isValid = false
+                    } else {
+                        tilReleaseYear.error = null
+                        releaseYear = releaseYearText.toIntOrNull()
+                    }
+                } else {
+                    tilReleaseYear.error = null
+                }
+            }
+
+            if (isValid) {
+                if (itemToEdit == null) {
+                    listItemViewModel.insertItem(title, notes, director, releaseYear)
+                } else {
+                    listItemViewModel.updateFullItem(
+                        itemToEdit,
+                        title,
+                        notes,
+                        director,
+                        releaseYear
+                    )
+                }
                 dialog.dismiss()
             }
-            .create()
-            .apply {
-                setOnShowListener { dialog ->
-                    getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                        val title = dialogBinding.editTextItemTitle.text.toString().trim()
-                        val notes = dialogBinding.editTextItemNotes.text.toString().trim()
-                            .takeIf { it.isNotEmpty() }
-                        var director: String? = null
-                        var releaseYearStr: String? = null
-                        var releaseYear: Int? = null
-                        var isValid = true
-
-                        if (title.isEmpty()) {
-                            dialogBinding.editTextItemTitle.error = getString(R.string.title_empty)
-                            isValid = false
-                        } else {
-                            dialogBinding.editTextItemTitle.error = null
-                        }
-
-                        if (isMovieList) {
-                            director = dialogBinding.editTextDirector.text.toString().trim()
-                                .takeIf { it.isNotEmpty() }
-                            releaseYearStr =
-                                dialogBinding.editTextReleaseYear.text.toString().trim()
-                            if (!releaseYearStr.isNullOrEmpty()) {
-                                if (!releaseYearStr.matches("\\d{4}".toRegex())) {
-                                    dialogBinding.tilReleaseYear.error =
-                                        getString(R.string.invalid_year)
-                                    isValid = false
-                                } else {
-                                    dialogBinding.tilReleaseYear.error = null
-                                    releaseYear = releaseYearStr.toIntOrNull()
-                                }
-                            } else {
-                                dialogBinding.tilReleaseYear.error = null
-                            }
-                        }
-
-                        if (isValid) {
-                            if (itemToEdit == null) {
-                                listItemViewModel.insertItem(title, notes, director, releaseYear)
-                            } else {
-                                listItemViewModel.updateFullItem(
-                                    itemToEdit,
-                                    title,
-                                    notes,
-                                    director,
-                                    releaseYear
-                                )
-                            }
-                            dialog.dismiss()
-                        }
-                    }
-                }
-            }.show()
+        }
+        
+        dialog.show()
     }
 
     private fun showDeleteItemConfirmationDialog(listItem: ListItem) {
