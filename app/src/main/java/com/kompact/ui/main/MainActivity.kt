@@ -44,6 +44,14 @@ class MainActivity : AppCompatActivity(), UserListAdapter.UserListAdapterListene
         }
     }
 
+    private val listItemsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            userListViewModel.refreshData()
+        }
+    }
+
     private var previousSortOrder: UserListViewModel.SortOrder = UserListViewModel.SortOrder.DATE
     // Separate flags for sort order and editing mode
     private var isCustomSortActive = false 
@@ -345,7 +353,7 @@ class MainActivity : AppCompatActivity(), UserListAdapter.UserListAdapterListene
             putExtra("LIST_NAME", userList.list_name)
             putExtra("LIST_CATEGORY", userList.list_category_type)
         }
-        startActivity(intent)
+        listItemsLauncher.launch(intent)
     }
 
     private fun setupDragAndDrop(enabled: Boolean) {

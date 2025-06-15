@@ -24,6 +24,7 @@ class ListItemsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityListItemsBinding
     private lateinit var adapter: ListItemAdapter
+    private var dataChanged = false
 
     private val listId: Long by lazy {
         intent.getLongExtra("LIST_ID", -1L).takeIf { it != -1L }
@@ -66,6 +67,7 @@ class ListItemsActivity : AppCompatActivity() {
             onItemClicked = { listItem -> showAddEditItemDialog(listItem) },
             onCheckboxChanged = { listItem, isChecked ->
                 listItemViewModel.updateItemStatus(listItem, isChecked)
+                dataChanged = true
             },
             onDeleteClicked = { listItem -> showDeleteItemConfirmationDialog(listItem) },
             onEditClicked = { listItem -> showAddEditItemDialog(listItem) },
@@ -205,5 +207,12 @@ class ListItemsActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         onBackPressedDispatcher.onBackPressed()
         return true
+    }
+
+    override fun finish() {
+        if (dataChanged) {
+            setResult(RESULT_OK)
+        }
+        super.finish()
     }
 } 
