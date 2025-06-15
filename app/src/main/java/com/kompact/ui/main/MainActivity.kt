@@ -81,11 +81,7 @@ class MainActivity : AppCompatActivity(), UserListAdapter.UserListAdapterListene
         
         // Check if we should enter custom sorting mode
         val currentSortOrder = userListViewModel.getSortOrder()
-        if (currentSortOrder == UserListViewModel.SortOrder.CUSTOM) {
-            isCustomSortActive = true
-        } else {
-            isCustomSortActive = false
-        }
+        isCustomSortActive = currentSortOrder == UserListViewModel.SortOrder.CUSTOM
         
         // Always start with edit mode disabled
         isEditModeActive = false
